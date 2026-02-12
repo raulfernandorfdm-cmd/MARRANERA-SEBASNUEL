@@ -29,6 +29,35 @@ export default function App() {
     setProductos(nuevos);
   };
 
+  const generarTextoWhatsApp = () => {
+    const items = productos
+      .filter((p) => (parseFloat(p.kilos) || 0) > 0)
+      .map(
+        (p) =>
+          `- ${p.nombre}: ${p.kilos} kg x $${Number(p.precio).toLocaleString()} = $${(
+            p.kilos * p.precio
+          ).toLocaleString()}`
+      )
+      .join("\n");
+
+    const total = calcularTotal().toLocaleString();
+
+    return `🧾 *Pedido - Marranera Sebasnuel*
+👤 Cliente: ${cliente || "-"}
+📝 Comentario: ${comentario || "-"}
+
+📦 Productos:
+${items || "- Sin productos -"}
+
+💰 *Total: $${total}*`;
+  };
+
+  const enviarWhatsApp = () => {
+    const texto = generarTextoWhatsApp();
+    const url = `https://wa.me/?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank");
+  };
+
   const imprimirPedido = () => {
     const filas = productos
       .filter((p) => (parseFloat(p.kilos) || 0) > 0)
@@ -168,22 +197,41 @@ export default function App() {
 
       <h2>Total: ${calcularTotal().toLocaleString()}</h2>
 
-      <button
-        onClick={imprimirPedido}
-        style={{
-          marginTop: 20,
-          padding: "12px 20px",
-          fontSize: 16,
-          cursor: "pointer",
-          background: "#00c853",
-          border: "none",
-          borderRadius: 6,
-          color: "#000",
-          fontWeight: "bold",
-        }}
-      >
-        🖨️ Imprimir Factura
-      </button>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          onClick={imprimirPedido}
+          style={{
+            marginTop: 20,
+            padding: "12px 20px",
+            fontSize: 16,
+            cursor: "pointer",
+            background: "#00c853",
+            border: "none",
+            borderRadius: 6,
+            color: "#000",
+            fontWeight: "bold",
+          }}
+        >
+          🖨️ Imprimir Factura
+        </button>
+
+        <button
+          onClick={enviarWhatsApp}
+          style={{
+            marginTop: 20,
+            padding: "12px 20px",
+            fontSize: 16,
+            cursor: "pointer",
+            background: "#25D366",
+            border: "none",
+            borderRadius: 6,
+            color: "#000",
+            fontWeight: "bold",
+          }}
+        >
+          📲 Enviar por WhatsApp
+        </button>
+      </div>
     </div>
   );
 }
