@@ -1,136 +1,93 @@
-import { useState } from "react";
+import { useState } from "react"
 
-const productosDisponibles = [
-  "Costilla",
-  "Pernil",
-  "Maza",
-  "Chuleta",
-  "Panceta",
-];
+const PRODUCTOS_INICIALES = [
+  { nombre: "Costilla", precio: 16000 },
+  { nombre: "Pernil", precio: 15000 },
+  { nombre: "Maza", precio: 14000 },
+  { nombre: "Chuleta", precio: 17000 },
+  { nombre: "Panceta", precio: 13000 },
+]
 
 export default function App() {
-  const [cliente, setCliente] = useState("");
-  const [producto, setProducto] = useState(productosDisponibles[0]);
-  const [kilos, setKilos] = useState("");
-  const [precio, setPrecio] = useState("16000");
-  const [pedido, setPedido] = useState([]);
+  const [cliente, setCliente] = useState("")
+  const [comentario, setComentario] = useState("")
+  const [productos, setProductos] = useState(
+    PRODUCTOS_INICIALES.map(p => ({ ...p, kilos: 0 }))
+  )
 
-  const total = pedido.reduce((acc, item) => acc + item.kilos * item.precio, 0);
-
-  function agregarProducto() {
-    if (!kilos || !precio) return;
-
-    setPedido([
-      ...pedido,
-      {
-        id: Date.now(),
-        producto,
-        kilos: Number(kilos),
-        precio: Number(precio),
-      },
-    ]);
-
-    setKilos("");
+  const actualizarKilos = (index, kilos) => {
+    const copia = [...productos]
+    copia[index].kilos = kilos
+    setProductos(copia)
   }
 
-  function eliminarProducto(id) {
-    setPedido(pedido.filter((p) => p.id !== id));
+  const actualizarPrecio = (index, precio) => {
+    const copia = [...productos]
+    copia[index].precio = precio
+    setProductos(copia)
   }
 
-  function editarProducto(id, campo, valor) {
-    setPedido(
-      pedido.map((p) =>
-        p.id === id ? { ...p, [campo]: Number(valor) } : p
-      )
-    );
-  }
+  const total = productos.reduce(
+    (acc, p) => acc + (Number(p.kilos) || 0) * (Number(p.precio) || 0),
+    0
+  )
 
   return (
-    <div style={{ padding: 20, background: "#111", minHeight: "100vh", color: "white" }}>
-      <h1>Marranera Sebasnuel 🐷</h1>
+    <div style={{ 
+      background: "#111", 
+      minHeight: "100vh", 
+      color: "white", 
+      padding: "20px", 
+      fontFamily: "Arial" 
+    }}>
+      <h1 style={{ textAlign: "center" }}>Marranera Sebasnuel</h1>
 
       <input
         placeholder="Nombre del cliente"
         value={cliente}
-        onChange={(e) => setCliente(e.target.value)}
-        style={{ padding: 8, width: "100%", marginBottom: 10 }}
+        onChange={e => setCliente(e.target.value)}
+        style={{ width: "100%", padding: 10, marginBottom: 10 }}
       />
 
-      <select value={producto} onChange={(e) => setProducto(e.target.value)}>
-        {productosDisponibles.map((p) => (
-          <option key={p}>{p}</option>
-        ))}
-      </select>
+      <h3>Productos</h3>
 
-      <input
-        placeholder="Kilos"
-        value={kilos}
-        onChange={(e) => setKilos(e.target.value)}
-        style={{ padding: 8, marginLeft: 10 }}
-      />
+      {productos.map((p, i) => (
+        <div key={i} style={{ 
+          background: "#222", 
+          padding: 10, 
+          marginBottom: 10, 
+          borderRadius: 8 
+        }}>
+          <strong>{p.nombre}</strong>
 
-      <input
-        placeholder="Precio por kilo"
-        value={precio}
-        onChange={(e) => setPrecio(e.target.value)}
-        style={{ padding: 8, marginLeft: 10 }}
-      />
+          <div style={{ display: "flex", gap: 10, marginTop: 5 }}>
+            <input
+              type="number"
+              placeholder="Kilos"
+              value={p.kilos}
+              onChange={e => actualizarKilos(i, e.target.value)}
+              style={{ flex: 1, padding: 6 }}
+            />
 
-      <button onClick={agregarProducto} style={{ marginLeft: 10 }}>
-        Agregar
-      </button>
-
-      <hr />
-
-      <h3>Pedido de: {cliente || "Sin nombre"}</h3>
-
-      {pedido.map((item) => (
-        <div key={item.id} style={{ marginBottom: 10, borderBottom: "1px solid #444" }}>
-          <strong>{item.producto}</strong> –  
-          <input
-            type="number"
-            value={item.kilos}
-            onChange={(e) => editarProducto(item.id, "kilos", e.target.value)}
-            style={{ width: 60, marginLeft: 5 }}
-          /> kg ×  
-          <input
-            type="number"
-            value={item.precio}
-            onChange={(e) => editarProducto(item.id, "precio", e.target.value)}
-            style={{ width: 90, marginLeft: 5 }}
-          /> $
-
-          <button onClick={() => eliminarProducto(item.id)} style={{ marginLeft: 10 }}>
-            ❌
-          </button>
+            <input
+              type="number"
+              placeholder="Precio por kilo"
+              value={p.precio}
+              onChange={e => actualizarPrecio(i, e.target.value)}
+              style={{ flex: 1, padding: 6 }}
+            />
+          </div>
         </div>
       ))}
 
+      <textarea
+        placeholder="Comentario del cliente (ej: no tan gordo, bien magro, etc)"
+        value={comentario}
+        onChange={e => setComentario(e.target.value)}
+        style={{ width: "100%", padding: 10, minHeight: 60 }}
+      />
+
       <h2>Total: ${total.toLocaleString()}</h2>
     </div>
-  );
-}
-      <button
-        onClick={() => {
-          const resumen = `
-Pedido - Marranera Sebasnuel
-Cliente: ${cliente}
-
-${pedido
-  .map(
-    (p) =>
-      `• ${p.producto}: ${p.kilos} kg x $${p.precio} = $${p.kilos * p.precio}`
   )
-  .join("\n")}
-
-TOTAL: $${total}
-          `.trim();
-
-          navigator.clipboard.writeText(resumen);
-          alert("Resumen copiado. Pégalo en WhatsApp 📲");
-        }}
-        style={{ marginTop: 20, padding: 10 }}
-      >
-        Generar resumen para WhatsApp
-      </button>
-
+}
