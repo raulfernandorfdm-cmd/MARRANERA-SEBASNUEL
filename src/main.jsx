@@ -24,11 +24,17 @@ function App() {
   // --- Estados del pedido actual ---
   const [cliente, setCliente] = useState("")
   const [productoSel, setProductoSel] = useState(productosBase[0])
-  const [precio, setPrecio] = useState(productosBase[0].precio) // editable
+  const [precio, setPrecio] = useState(productosBase[0].precio)
   const [kilos, setKilos] = useState("")
   const [comentario, setComentario] = useState("")
-  const [lineas, setLineas] = useState([]) // líneas del pedido actual
-  const [pedidos, setPedidos] = useState([]) // historial
+  const [lineas, setLineas] = useState([])
+  const [pedidos, setPedidos] = useState([])
+
+  // --- Edición de línea ---
+  const [editandoId, setEditandoId] = useState(null)
+  const [editKilos, setEditKilos] = useState("")
+  const [editPrecio, setEditPrecio] = useState("")
+  const [editComentario, setEditComentario] = useState("")
 
   const iniciarSesion = () => {
     const ok = usuarios.find(u => u.usuario === usuario && u.password === password)
@@ -39,7 +45,7 @@ function App() {
   const cambiarProducto = (nombre) => {
     const p = productosBase.find(x => x.nombre === nombre)
     setProductoSel(p)
-    setPrecio(p.precio) // carga precio base automáticamente (editable)
+    setPrecio(p.precio)
   }
 
   const agregarLinea = () => {
@@ -79,7 +85,6 @@ function App() {
     }
 
     setPedidos([pedido, ...pedidos])
-    // reset pedido actual
     setCliente("")
     setLineas([])
     setProductoSel(productosBase[0])
@@ -90,6 +95,32 @@ function App() {
 
   const marcarEntregado = (id) => {
     setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: "Entregado" } : p))
+  }
+
+  const borrarLinea = (id) => {
+    setLineas(lineas.filter(l => l.id !== id))
+  }
+
+  const empezarEditar = (l) => {
+    setEditandoId(l.id)
+    setEditKilos(l.kilos)
+    setEditPrecio(l.precio)
+    setEditComentario(l.comentario || "")
+  }
+
+  const guardarEdicion = (id) => {
+    const k = parseFloat(editKilos)
+    const pr = parseFloat(editPrecio)
+    if (!k || !pr) return alert("Valores inválidos")
+
+    setLineas(lineas.map(l => {
+      if (l.id === id) {
+        const subtotal = k * pr
+        return { ...l, kilos: k, precio: pr, subtotal, comentario: editComentario }
+      }
+      return l
+    }))
+    setEditandoId(null)
   }
 
   if (!logueado) {
@@ -109,52 +140,40 @@ function App() {
     <div style={S.fondo}>
       <h1 style={S.tituloGrande}>Marranera Sebasnuel</h1>
 
-      {/* --- Hoja de pedido --- */}
       <div style={S.panel}>
-        <input
-          style={S.input}
-          placeholder="Nombre del cliente"
-          value={cliente}
-          onChange={e => setCliente(e.target.value)}
-        />
+        <input style={S.input} placeholder="Nombre del cliente" value={cliente} onChange={e => setCliente(e.target.value)} />
 
         <select style={S.input} onChange={e => cambiarProducto(e.target.value)}>
-          {productosBase.map(p => (
-            <option key={p.id}>{p.nombre}</option>
-          ))}
+          {productosBase.map(p => <option key={p.id}>{p.nombre}</option>)}
         </select>
 
-        <input
-          style={S.input}
-          type="number"
-          placeholder="Precio por kilo (editable)"
-          value={precio}
-          onChange={e => setPrecio(e.target.value)}
-        />
-
-        <input
-          style={S.input}
-          type="number"
-          placeholder="Kilos"
-          value={kilos}
-          onChange={e => setKilos(e.target.value)}
-        />
-
-        <input
-          style={S.input}
-          placeholder="Comentario (ej: no muy gordo)"
-          value={comentario}
-          onChange={e => setComentario(e.target.value)}
-        />
+        <input style={S.input} type="number" placeholder="Precio por kilo (editable)" value={precio} onChange={e => setPrecio(e.target.value)} />
+        <input style={S.input} type="number" placeholder="Kilos" value={kilos} onChange={e => setKilos(e.target.value)} />
+        <input style={S.input} placeholder="Comentario (ej: no muy gordo)" value={comentario} onChange={e => setComentario(e.target.value)} />
 
         <button style={S.botonSec} onClick={agregarLinea}>➕ Agregar producto</button>
 
-        {/* Lista de líneas del pedido actual */}
         <div style={{marginTop:10}}>
           {lineas.map(l => (
             <div key={l.id} style={S.linea}>
-              <strong>{l.producto}</strong> — {l.kilos} kg × ${l.precio} = <b>${l.subtotal}</b>
-              {l.comentario && <div style={{opacity:.8}}>📝 {l.comentario}</div>}
+              {editandoId === l.id ? (
+                <>
+                  <div><b>{l.producto}</b></div>
+                  <input style={S.inputMini} type="number" value={editKilos} onChange={e=>setEditKilos(e.target.value)} />
+                  <input style={S.inputMini} type="number" value={editPrecio} onChange={e=>setEditPrecio(e.target.value)} />
+                  <input style={S.inputMini} value={editComentario} onChange={e=>setEditComentario(e.target.value)} />
+                  <button style={S.botonMini} onClick={()=>guardarEdicion(l.id)}>Guardar</button>
+                </>
+              ) : (
+                <>
+                  <strong>{l.producto}</strong> — {l.kilos} kg × ${l.precio} = <b>${l.subtotal}</b>
+                  {l.comentario && <div style={{opacity:.8}}>📝 {l.comentario}</div>}
+                  <div style={{marginTop:6}}>
+                    <button style={S.botonMini} onClick={()=>empezarEditar(l)}>✏️ Editar</button>{" "}
+                    <button style={S.botonMini} onClick={()=>borrarLinea(l.id)}>🗑️ Borrar</button>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>
@@ -163,7 +182,6 @@ function App() {
         <button style={S.boton} onClick={guardarPedido}>Guardar pedido</button>
       </div>
 
-      {/* --- Historial --- */}
       <div style={S.lista}>
         <h2>Pedidos</h2>
         {pedidos.map(p => (
@@ -196,6 +214,7 @@ const S = {
   tituloGrande: { textAlign:"center", marginBottom:20 },
   panel: { background:"#1e1e1e", padding:16, borderRadius:10, maxWidth:420, margin:"0 auto", display:"flex", gap:8, flexDirection:"column" },
   input: { padding:10, borderRadius:6, border:"none" },
+  inputMini: { padding:8, borderRadius:6, border:"none", width:"100%", marginTop:6 },
   boton: { padding:10, borderRadius:6, border:"none", background:"#b30000", color:"#fff", cursor:"pointer" },
   botonSec: { padding:10, borderRadius:6, border:"none", background:"#333", color:"#fff", cursor:"pointer" },
   botonMini: { padding:6, borderRadius:6, border:"none", background:"#444", color:"#fff", cursor:"pointer", marginTop:6 },
