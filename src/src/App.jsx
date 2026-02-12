@@ -1,146 +1,180 @@
 import { useState } from "react";
 
-const productosBase = [
-  { nombre: "Costilla", precio: 16000 },
-  { nombre: "Pernil", precio: 16000 },
-  { nombre: "Maza", precio: 16000 },
-  { nombre: "Chuleta", precio: 16000 },
-  { nombre: "Panceta", precio: 16000 },
-];
-
 export default function App() {
+  const productosIniciales = [
+    { nombre: "Costilla", precio: 16000 },
+    { nombre: "Pernil", precio: 16000 },
+    { nombre: "Maza", precio: 16000 },
+    { nombre: "Chuleta", precio: 16000 },
+    { nombre: "Panceta", precio: 16000 },
+  ];
+
   const [cliente, setCliente] = useState("");
   const [comentario, setComentario] = useState("");
-  const [items, setItems] = useState([
-    { producto: "Costilla", kilos: "", precio: 16000 }
-  ]);
+  const [productos, setProductos] = useState(
+    productosIniciales.map(p => ({ ...p, kilos: "" }))
+  );
   const [pedidos, setPedidos] = useState([]);
 
-  const agregarProducto = () => {
-    setItems([...items, { producto: "Costilla", kilos: "", precio: 16000 }]);
-  };
-
-  const actualizarItem = (index, campo, valor) => {
-    const copia = [...items];
-    copia[index][campo] = valor;
-    setItems(copia);
-  };
-
-  const calcularTotal = () => {
-    return items.reduce((acc, item) => {
-      const k = parseFloat(item.kilos) || 0;
-      const p = parseFloat(item.precio) || 0;
-      return acc + k * p;
+  const calcularTotalActual = () => {
+    return productos.reduce((total, p) => {
+      const kilos = parseFloat(p.kilos) || 0;
+      const precio = parseFloat(p.precio) || 0;
+      return total + kilos * precio;
     }, 0);
   };
 
   const guardarPedido = () => {
-    if (!cliente) return alert("Pon el nombre del cliente");
-
     const nuevoPedido = {
       id: Date.now(),
       cliente,
       comentario,
-      fecha: new Date().toLocaleString(),
-      items,
-      total: calcularTotal(),
-      entregado: false
+      productos: productos.map(p => ({
+        nombre: p.nombre,
+        kilos: parseFloat(p.kilos) || 0,
+        precio: parseFloat(p.precio) || 0,
+      })),
     };
 
-    setPedidos([nuevoPedido, ...pedidos]);
+    setPedidos([...pedidos, nuevoPedido]);
+
+    // limpiar formulario
     setCliente("");
     setComentario("");
-    setItems([{ producto: "Costilla", kilos: "", precio: 16000 }]);
+    setProductos(productosIniciales.map(p => ({ ...p, kilos: "" })));
   };
 
-  const marcarEntregado = (id) => {
-    setPedidos(pedidos.map(p =>
-      p.id === id ? { ...p, entregado: true } : p
-    ));
+  const actualizarProductoActual = (index, campo, valor) => {
+    const nuevos = [...productos];
+    nuevos[index][campo] = valor;
+    setProductos(nuevos);
+  };
+
+  const actualizarPedido = (pedidoIndex, productoIndex, campo, valor) => {
+    const nuevosPedidos = [...pedidos];
+    nuevosPedidos[pedidoIndex].productos[productoIndex][campo] = valor;
+    setPedidos(nuevosPedidos);
+  };
+
+  const totalPedido = (pedido) => {
+    return pedido.productos.reduce((t, p) => {
+      const kilos = parseFloat(p.kilos) || 0;
+      const precio = parseFloat(p.precio) || 0;
+      return t + kilos * precio;
+    }, 0);
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#111", color: "#fff", padding: 20 }}>
+    <div style={{
+      minHeight: "100vh",
+      background: "#111",
+      color: "#fff",
+      padding: 20,
+      fontFamily: "Arial"
+    }}>
       <h1 style={{ textAlign: "center" }}>Marranera Sebasnuel</h1>
 
+      <h3>Cliente</h3>
       <input
         placeholder="Nombre del cliente"
         value={cliente}
         onChange={e => setCliente(e.target.value)}
-        style={{ width: "100%", padding: 10, marginBottom: 10 }}
+        style={{ width: "100%", padding: 8, marginBottom: 10 }}
       />
 
-      {items.map((item, i) => (
-        <div key={i} style={{ background: "#222", padding: 10, marginBottom: 10, borderRadius: 8 }}>
-          <select
-            value={item.producto}
-            onChange={e => actualizarItem(i, "producto", e.target.value)}
-            style={{ width: "100%", padding: 8 }}
-          >
-            {productosBase.map(p => (
-              <option key={p.nombre} value={p.nombre}>{p.nombre}</option>
-            ))}
-          </select>
+      <h3>Productos</h3>
+      {productos.map((p, i) => (
+        <div key={i} style={{ border: "1px solid #333", padding: 10, marginBottom: 10 }}>
+          <strong>{p.nombre}</strong>
 
-          <input
-            placeholder="Precio por kilo"
-            type="number"
-            value={item.precio}
-            onChange={e => actualizarItem(i, "precio", e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 6 }}
-          />
+          <div>
+            Kilos:
+            <input
+              type="number"
+              value={p.kilos}
+              onChange={e => actualizarProductoActual(i, "kilos", e.target.value)}
+              style={{ marginLeft: 10, width: 80 }}
+            />
+          </div>
 
-          <input
-            placeholder="Kilos"
-            type="number"
-            value={item.kilos}
-            onChange={e => actualizarItem(i, "kilos", e.target.value)}
-            style={{ width: "100%", padding: 8, marginTop: 6 }}
-          />
+          <div>
+            Precio por kilo:
+            <input
+              type="number"
+              value={p.precio}
+              onChange={e => actualizarProductoActual(i, "precio", e.target.value)}
+              style={{ marginLeft: 10, width: 100 }}
+            />
+          </div>
         </div>
       ))}
 
-      <button onClick={agregarProducto} style={{ width: "100%", padding: 10 }}>
-        ➕ Agregar otro producto
-      </button>
-
+      <h3>Comentario</h3>
       <textarea
-        placeholder="Comentario (ej: no muy gordo)"
+        placeholder="Ej: no tan gordo, cortar en trozos..."
         value={comentario}
         onChange={e => setComentario(e.target.value)}
-        style={{ width: "100%", padding: 10, marginTop: 10 }}
+        style={{ width: "100%", padding: 8, minHeight: 60 }}
       />
 
-      <h2>Total: ${calcularTotal().toLocaleString()}</h2>
+      <h2>Total actual: ${calcularTotalActual().toLocaleString()}</h2>
 
       <button
         onClick={guardarPedido}
-        style={{ width: "100%", padding: 12, background: "red", color: "#fff", marginTop: 10 }}
+        style={{
+          padding: 10,
+          width: "100%",
+          background: "#2ecc71",
+          border: "none",
+          color: "#000",
+          fontWeight: "bold",
+          cursor: "pointer",
+          marginTop: 10
+        }}
       >
-        Guardar pedido
+        Guardar Pedido
       </button>
 
-      <h2 style={{ marginTop: 30 }}>Pedidos</h2>
+      <hr style={{ margin: "30px 0", borderColor: "#333" }} />
 
-      {pedidos.map(p => (
-        <div key={p.id} style={{ background: "#222", padding: 10, marginBottom: 10 }}>
-          <p><b>Cliente:</b> {p.cliente}</p>
-          <p><b>Fecha:</b> {p.fecha}</p>
-          <p><b>Estado:</b> {p.entregado ? "Entregado" : "Pendiente"}</p>
+      <h2>Pedidos Guardados</h2>
 
-          {p.items.map((it, i) => (
-            <p key={i}>
-              - {it.producto}: {it.kilos} kg x ${it.precio} = ${(it.kilos * it.precio).toLocaleString()}
-            </p>
+      {pedidos.map((pedido, pi) => (
+        <div key={pedido.id} style={{ border: "1px solid #444", padding: 10, marginBottom: 15 }}>
+          <strong>Cliente:</strong>
+          <input
+            value={pedido.cliente}
+            onChange={e => {
+              const nuevos = [...pedidos];
+              nuevos[pi].cliente = e.target.value;
+              setPedidos(nuevos);
+            }}
+            style={{ marginLeft: 10, padding: 4 }}
+          />
+
+          <p><strong>Productos:</strong></p>
+
+          {pedido.productos.map((p, i) => (
+            <div key={i} style={{ marginBottom: 8 }}>
+              {p.nombre} —
+              Kilos:
+              <input
+                type="number"
+                value={p.kilos}
+                onChange={e => actualizarPedido(pi, i, "kilos", e.target.value)}
+                style={{ width: 60, marginLeft: 5 }}
+              />
+              Precio:
+              <input
+                type="number"
+                value={p.precio}
+                onChange={e => actualizarPedido(pi, i, "precio", e.target.value)}
+                style={{ width: 80, marginLeft: 5 }}
+              />
+            </div>
           ))}
 
-          <p><b>Total:</b> ${p.total.toLocaleString()}</p>
-
-          {!p.entregado && (
-            <button onClick={() => marcarEntregado(p.id)}>
-              Marcar como entregado
-            </button>
-          )}
+          <strong>Total: ${totalPedido(pedido).toLocaleString()}</strong>
         </div>
       ))}
     </div>
