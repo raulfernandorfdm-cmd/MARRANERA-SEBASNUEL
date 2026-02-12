@@ -1,4 +1,5 @@
 import { useState } from "react";
+import * as XLSX from "xlsx";
 
 export default function App() {
   const productosIniciales = [
@@ -16,14 +17,11 @@ export default function App() {
   const [kilosActual, setKilosActual] = useState("");
   const [items, setItems] = useState([]);
   const [pedidos, setPedidos] = useState([]);
-  const [filtro, setFiltro] = useState("todos"); // hoy | semana | todos
+  const [filtro, setFiltro] = useState("todos");
 
   const agregarProducto = () => {
     if (!kilosActual) return;
-    setItems([
-      ...items,
-      { nombre: productoActual, kilos: kilosActual, precio: precioActual },
-    ]);
+    setItems([...items, { nombre: productoActual, kilos: kilosActual, precio: precioActual }]);
     setKilosActual("");
   };
 
@@ -69,14 +67,23 @@ export default function App() {
     return true;
   });
 
+  const exportarExcel = () => {
+    const data = pedidos.map(p => ({
+      Cliente: p.cliente,
+      Fecha: new Date(p.fecha).toLocaleString(),
+      Estado: p.estado,
+      Productos: p.items.map(i => `${i.nombre} (${i.kilos}kg x $${i.precio})`).join(" | "),
+      Total: p.total
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pedidos");
+    XLSX.writeFile(wb, "pedidos_marranera.xlsx");
+  };
+
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#111",
-      color: "#fff",
-      padding: 20,
-      fontFamily: "Arial"
-    }}>
+    <div style={{ minHeight: "100vh", background: "#111", color: "#fff", padding: 20 }}>
       <h1 style={{ textAlign: "center" }}>Marranera Sebasnuel</h1>
 
       <input
@@ -123,39 +130,33 @@ export default function App() {
         style={{ width: "100%", padding: 8, marginBottom: 10 }}
       />
 
-      <button onClick={agregarProducto} style={{ padding: 10, width: "100%", marginBottom: 10 }}>
+      <button onClick={agregarProducto} style={{ width: "100%", padding: 10, marginBottom: 10 }}>
         + Agregar producto
       </button>
 
       <h3>Total: ${totalPedido.toLocaleString()}</h3>
 
-      <button onClick={guardarPedido} style={{
-        padding: 12,
-        width: "100%",
-        background: "#e53935",
-        color: "#fff",
-        border: "none",
-        fontWeight: "bold",
-        marginBottom: 30
-      }}>
+      <button onClick={guardarPedido} style={{ width: "100%", padding: 12, background: "#e53935", color: "#fff", border: "none", marginBottom: 20 }}>
         Guardar pedido
+      </button>
+
+      <button onClick={exportarExcel} style={{ width: "100%", padding: 12, background: "#2e7d32", color: "#fff", border: "none", marginBottom: 30 }}>
+        📥 Exportar pedidos a Excel
       </button>
 
       <h2>Pedidos</h2>
 
       <div style={{ marginBottom: 10 }}>
-        <button onClick={() => setFiltro("todos")} style={{ marginRight: 5 }}>Todos</button>
-        <button onClick={() => setFiltro("hoy")} style={{ marginRight: 5 }}>Hoy</button>
-        <button onClick={() => setFiltro("semana")}>Últimos 7 días</button>
+        <button onClick={() => setFiltro("todos")}>Todos</button>
+        <button onClick={() => setFiltro("hoy")} style={{ marginLeft: 5 }}>Hoy</button>
+        <button onClick={() => setFiltro("semana")} style={{ marginLeft: 5 }}>Últimos 7 días</button>
       </div>
 
       {pedidosFiltrados.map(p => (
         <div key={p.id} style={{ background: "#222", padding: 10, marginBottom: 10 }}>
-          <p><b>Cliente:</b> {p.cliente}</p>
-          <p><b>Fecha:</b> {new Date(p.fecha).toLocaleString()}</p>
-          <p><b>Estado:</b> {p.estado}</p>
+          <b>{p.cliente}</b> — {new Date(p.fecha).toLocaleString()}  
           {p.items.map((i, idx) => (
-            <p key={idx}>• {i.nombre}: {i.kilos} kg x ${i.precio} = ${(i.kilos * i.precio).toLocaleString()}</p>
+            <p key={idx}>• {i.nombre}: {i.kilos}kg x ${i.precio}</p>
           ))}
           <b>Total: ${p.total.toLocaleString()}</b>
         </div>
