@@ -110,3 +110,27 @@ export default function App() {
     </div>
   );
 }
+      <button
+        onClick={() => {
+          const resumen = `
+Pedido - Marranera Sebasnuel
+Cliente: ${cliente}
+
+${pedido
+  .map(
+    (p) =>
+      `• ${p.producto}: ${p.kilos} kg x $${p.precio} = $${p.kilos * p.precio}`
+  )
+  .join("\n")}
+
+TOTAL: $${total}
+          `.trim();
+
+          navigator.clipboard.writeText(resumen);
+          alert("Resumen copiado. Pégalo en WhatsApp 📲");
+        }}
+        style={{ marginTop: 20, padding: 10 }}
+      >
+        Generar resumen para WhatsApp
+      </button>
+
