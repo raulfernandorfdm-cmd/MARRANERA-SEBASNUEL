@@ -1,6 +1,16 @@
 import { useState } from "react";
 
 export default function App() {
+  // Usuarios iniciales
+  const [usuarios, setUsuarios] = useState([
+    { user: "raul", pass: "raul2020" },
+    { user: "yuliana", pass: "raul2020" },
+  ]);
+
+  const [loginUser, setLoginUser] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [usuarioActivo, setUsuarioActivo] = useState(null);
+
   const productosBase = [
     { nombre: "Costilla", precio: 16000 },
     { nombre: "Pernil", precio: 16000 },
@@ -14,6 +24,26 @@ export default function App() {
     { producto: "Costilla", kilos: "", precio: 16000, comentario: "" }
   ]);
   const [pedidos, setPedidos] = useState([]);
+
+  const login = () => {
+    const ok = usuarios.find(u => u.user === loginUser && u.pass === loginPass);
+    if (!ok) return alert("Usuario o contraseña incorrectos");
+    setUsuarioActivo(loginUser);
+    setLoginUser("");
+    setLoginPass("");
+  };
+
+  const crearUsuario = () => {
+    if (!loginUser || !loginPass) return alert("Usuario y contraseña requeridos");
+    if (usuarios.find(u => u.user === loginUser)) return alert("Ese usuario ya existe");
+
+    setUsuarios([...usuarios, { user: loginUser, pass: loginPass }]);
+    alert("Usuario creado");
+    setLoginUser("");
+    setLoginPass("");
+  };
+
+  const logout = () => setUsuarioActivo(null);
 
   const agregarProducto = () => {
     setItems([...items, { producto: "Costilla", kilos: "", precio: 16000, comentario: "" }]);
@@ -36,6 +66,7 @@ export default function App() {
 
     const nuevo = {
       id: Date.now(),
+      usuario: usuarioActivo,
       cliente,
       fecha: new Date().toLocaleString(),
       items,
@@ -52,45 +83,35 @@ export default function App() {
     setPedidos(pedidos.map(p => p.id === id ? { ...p, estado: "Entregado" } : p));
   };
 
-  const imprimirPedido = (pedido) => {
-    const texto = `
-MARRANERA SEBASNUEL
-
-Cliente: ${pedido.cliente}
-Fecha: ${pedido.fecha}
-Estado: ${pedido.estado}
-
-${pedido.items.map(i =>
-  `${i.producto}: ${i.kilos} kg x $${i.precio} = $${i.kilos * i.precio}
-Comentario: ${i.comentario || "N/A"}`
-).join("\n")}
-
-TOTAL: $${pedido.total}
-`;
-    const win = window.open("", "_blank");
-    win.document.write(`<pre>${texto}</pre>`);
-    win.print();
-  };
-
-  const exportarExcel = () => {
-    let csv = "Cliente,Producto,Kilos,Precio,Comentario,Total\n";
-    pedidos.forEach(p => {
-      p.items.forEach(i => {
-        csv += `${p.cliente},${i.producto},${i.kilos},${i.precio},${i.comentario},${i.kilos * i.precio}\n`;
-      });
-    });
-
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "pedidos_marranera.csv";
-    a.click();
-  };
+  if (!usuarioActivo) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#000", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ background: "#1a1a1a", padding: 30, borderRadius: 10, width: 300 }}>
+          <h2>Iniciar sesión</h2>
+          <input
+            placeholder="Usuario"
+            value={loginUser}
+            onChange={e => setLoginUser(e.target.value)}
+            style={{ width: "100%", padding: 10, marginBottom: 10 }}
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={loginPass}
+            onChange={e => setLoginPass(e.target.value)}
+            style={{ width: "100%", padding: 10, marginBottom: 10 }}
+          />
+          <button onClick={login} style={{ width: "100%", padding: 10, marginBottom: 10 }}>Entrar</button>
+          <button onClick={crearUsuario} style={{ width: "100%", padding: 10 }}>Crear usuario</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: "100vh", background: "#000", color: "#fff", padding: 20 }}>
       <h1 style={{ textAlign: "center" }}>Marranera Sebasnuel</h1>
+      <p>Usuario: {usuarioActivo} <button onClick={logout}>Cerrar sesión</button></p>
 
       <div style={{ maxWidth: 400, margin: "auto", background: "#1a1a1a", padding: 20, borderRadius: 10 }}>
         <input
@@ -153,6 +174,7 @@ TOTAL: $${pedido.total}
       {pedidos.map(p => (
         <div key={p.id} style={{ background: "#222", padding: 15, borderRadius: 8, marginBottom: 10 }}>
           <strong>Cliente:</strong> {p.cliente}<br />
+          <strong>Usuario:</strong> {p.usuario}<br />
           <strong>Fecha:</strong> {p.fecha}<br />
           <strong>Estado:</strong> {p.estado}<br />
 
@@ -168,15 +190,8 @@ TOTAL: $${pedido.total}
           {p.estado === "Pendiente" && (
             <button onClick={() => marcarEntregado(p.id)}>Marcar como entregado</button>
           )}
-          <button onClick={() => imprimirPedido(p)} style={{ marginLeft: 10 }}>🖨 Imprimir</button>
         </div>
       ))}
-
-      {pedidos.length > 0 && (
-        <button onClick={exportarExcel} style={{ marginTop: 20, padding: 10 }}>
-          📥 Exportar a Excel
-        </button>
-      )}
     </div>
   );
 }
