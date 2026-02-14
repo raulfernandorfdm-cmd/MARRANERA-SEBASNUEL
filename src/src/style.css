@@ -1,47 +1,43 @@
 body {
-  margin: 0;
   font-family: Arial, sans-serif;
-  background: #111;
-  color: white;
+  background: #f7f7f7;
 }
 
 .container {
-  max-width: 420px;
+  max-width: 600px;
   margin: auto;
   padding: 20px;
+  background: white;
+  border-radius: 10px;
 }
 
-input,
-select {
+input, select {
   width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  border-radius: 6px;
-  border: none;
+  padding: 8px;
+  margin: 5px 0;
 }
 
 button {
-  width: 100%;
   padding: 10px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 6px;
-  background: #444;
+  margin: 5px 0;
+  width: 100%;
+  background: #0f0f0f;
   color: white;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
 }
 
 button:hover {
-  opacity: 0.8;
+  background: #333;
 }
 
-.guardar {
-  background: #e53935;
+.fila {
+  display: flex;
+  gap: 5px;
 }
 
-.pedido {
-  background: #222;
-  margin-top: 12px;
-  padding: 10px;
-  border-radius: 6px;
+.alerta {
+  color: red;
+  font-weight: bold;
 }
