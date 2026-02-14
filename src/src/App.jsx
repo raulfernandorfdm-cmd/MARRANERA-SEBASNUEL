@@ -1,95 +1,93 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "./style.css";
-
-const PRODUCTOS_BASE = [
-  { nombre: "Costilla", precio: 16000 },
-  { nombre: "Tocino", precio: 14000 },
-  { nombre: "Lomo", precio: 18000 },
-];
+import jsPDF from "jspdf";
 
 export default function App() {
   const [cliente, setCliente] = useState("");
-  const [producto, setProducto] = useState(PRODUCTOS_BASE[0].nombre);
-  const [precio, setPrecio] = useState(PRODUCTOS_BASE[0].precio);
-  const [kilos, setKilos] = useState("");
-  const [comentario, setComentario] = useState("");
-  const [items, setItems] = useState([]);
-  const [pedidos, setPedidos] = useState([]);
-
-  // Cargar pedidos guardados
-  useEffect(() => {
-    const guardados = localStorage.getItem("pedidos");
-    if (guardados) setPedidos(JSON.parse(guardados));
-  }, []);
-
-  // Guardar pedidos
-  useEffect(() => {
-    localStorage.setItem("pedidos", JSON.stringify(pedidos));
-  }, [pedidos]);
+  const [vendedor, setVendedor] = useState("Raúl");
+  const [metodoPago, setMetodoPago] = useState("Pendiente");
+  const [productos, setProductos] = useState([
+    { nombre: "", kilos: 1, precio: 0 }
+  ]);
+  const [ventasHoy, setVentasHoy] = useState([]);
 
   const agregarProducto = () => {
-    if (!kilos || !precio) return alert("Pon kilos y precio");
-
-    setItems([
-      ...items,
-      {
-        producto,
-        precio: Number(precio),
-        kilos: Number(kilos),
-        comentario,
-      },
-    ]);
-
-    setKilos("");
-    setComentario("");
+    setProductos([...productos, { nombre: "", kilos: 1, precio: 0 }]);
   };
 
-  const totalPedido = items.reduce(
-    (acc, i) => acc + i.precio * i.kilos,
+  const actualizarProducto = (i, campo, valor) => {
+    const copia = [...productos];
+    copia[i][campo] = valor;
+    setProductos(copia);
+  };
+
+  const total = productos.reduce(
+    (acc, p) => acc + Number(p.kilos || 0) * Number(p.precio || 0),
     0
   );
 
-  const guardarPedido = () => {
-    if (!cliente || items.length === 0) {
-      return alert("Pon el nombre del cliente y al menos un producto");
-    }
-
-    const nuevo = {
-      id: Date.now(),
+  const guardarVenta = () => {
+    const venta = {
       cliente,
-      fecha: new Date().toLocaleString(),
-      estado: "Pendiente",
-      items,
-      total: totalPedido,
+      vendedor,
+      metodoPago,
+      productos,
+      total,
+      fecha: new Date().toLocaleString()
     };
-
-    setPedidos([nuevo, ...pedidos]);
-    setCliente("");
-    setItems([]);
+    setVentasHoy([...ventasHoy, venta]);
+    alert("Venta guardada ✔️");
   };
 
-  const marcarEntregado = (id) => {
-    setPedidos(
-      pedidos.map((p) =>
-        p.id === id ? { ...p, estado: "Entregado" } : p
-      )
+  const generarPDF = () => {
+    const doc = new jsPDF();
+    doc.addImage("/icon-192.png", "PNG", 80, 10, 50, 50);
+
+    doc.text("Marranera Sebasnuel", 105, 70, { align: "center" });
+    doc.text(`Cliente: ${cliente}`, 10, 90);
+    doc.text(`Vendedor: ${vendedor}`, 10, 100);
+    doc.text(`Método de pago: ${metodoPago}`, 10, 110);
+
+    let y = 130;
+    productos.forEach((p) => {
+      doc.text(`${p.nombre} - ${p.kilos} kg x $${p.precio}`, 10, y);
+      y += 10;
+    });
+
+    doc.text(`TOTAL: $${total}`, 10, y + 10);
+    doc.text(
+      "Sistema Marranera Sebasnuel - Software creado por Raúl Díaz © 2026",
+      105,
+      280,
+      { align: "center" }
     );
+
+    doc.save("factura.pdf");
   };
 
-  const borrarPedido = (id) => {
-    if (!confirm("¿Seguro que deseas borrar este pedido?")) return;
-    setPedidos(pedidos.filter((p) => p.id !== id));
-  };
+  const enviarWhatsApp = () => {
+    const texto = `
+Pedido Marranera Sebasnuel
+Cliente: ${cliente}
+Vendedor: ${vendedor}
+Pago: ${metodoPago}
 
-  const cambiarProducto = (nombre) => {
-    const prod = PRODUCTOS_BASE.find((p) => p.nombre === nombre);
-    setProducto(nombre);
-    setPrecio(prod.precio);
+Productos:
+${productos
+  .map((p) => `${p.nombre} - ${p.kilos}kg x $${p.precio}`)
+  .join("\n")}
+
+Total: $${total}
+`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(texto)}`,
+      "_blank"
+    );
   };
 
   return (
     <div className="container">
-      <h1>Marranera Sebasnuel</h1>
+      <h1>Marranera Sebasnuel 🐷</h1>
 
       <input
         placeholder="Nombre del cliente"
@@ -97,74 +95,52 @@ export default function App() {
         onChange={(e) => setCliente(e.target.value)}
       />
 
-      <select
-        value={producto}
-        onChange={(e) => cambiarProducto(e.target.value)}
-      >
-        {PRODUCTOS_BASE.map((p) => (
-          <option key={p.nombre} value={p.nombre}>
-            {p.nombre}
-          </option>
-        ))}
+      <select value={vendedor} onChange={(e) => setVendedor(e.target.value)}>
+        <option>Raúl</option>
+        <option>Pareja</option>
       </select>
 
-      <input
-        type="number"
-        placeholder="Precio por kilo"
-        value={precio}
-        onChange={(e) => setPrecio(e.target.value)}
-      />
+      <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+        <option>Pendiente</option>
+        <option>Pagado</option>
+      </select>
 
-      <input
-        type="number"
-        placeholder="Kilos"
-        value={kilos}
-        onChange={(e) => setKilos(e.target.value)}
-      />
+      {metodoPago === "Pendiente" && (
+        <p className="alerta">⚠️ Cliente con pago pendiente</p>
+      )}
 
-      <input
-        placeholder="Comentario (opcional)"
-        value={comentario}
-        onChange={(e) => setComentario(e.target.value)}
-      />
+      <h3>Productos</h3>
+      {productos.map((p, i) => (
+        <div key={i} className="fila">
+          <input
+            placeholder="Producto"
+            value={p.nombre}
+            onChange={(e) => actualizarProducto(i, "nombre", e.target.value)}
+          />
+          <input
+            type="number"
+            step="0.1"
+            min="0.1"
+            value={p.kilos}
+            onChange={(e) => actualizarProducto(i, "kilos", e.target.value)}
+          />
+          <input
+            type="number"
+            value={p.precio}
+            onChange={(e) => actualizarProducto(i, "precio", e.target.value)}
+          />
+        </div>
+      ))}
 
       <button onClick={agregarProducto}>➕ Agregar producto</button>
 
-      <h3>Total: ${totalPedido.toLocaleString()}</h3>
+      <h2>Total: ${total}</h2>
 
-      <button className="guardar" onClick={guardarPedido}>
-        Guardar pedido
-      </button>
+      <button onClick={guardarVenta}>💾 Guardar venta</button>
+      <button onClick={generarPDF}>📄 Descargar PDF</button>
+      <button onClick={enviarWhatsApp}>📲 Enviar por WhatsApp</button>
 
-      <h2>Pedidos</h2>
-
-      {pedidos.map((p) => (
-        <div className="pedido" key={p.id}>
-          <b>Cliente:</b> {p.cliente} <br />
-          <b>Fecha:</b> {p.fecha} <br />
-          <b>Estado:</b> {p.estado} <br />
-
-          <ul>
-            {p.items.map((i, idx) => (
-              <li key={idx}>
-                {i.producto}: {i.kilos} kg × ${i.precio.toLocaleString()} = $
-                {(i.kilos * i.precio).toLocaleString()}
-                {i.comentario ? ` (${i.comentario})` : ""}
-              </li>
-            ))}
-          </ul>
-
-          <b>Total:</b> ${p.total.toLocaleString()} <br />
-
-          {p.estado === "Pendiente" && (
-            <button onClick={() => marcarEntregado(p.id)}>
-              Marcar como entregado
-            </button>
-          )}
-
-          <button onClick={() => borrarPedido(p.id)}>🗑️ Borrar</button>
-        </div>
-      ))}
+      <h3>📊 Ventas de hoy: {ventasHoy.length}</h3>
     </div>
   );
 }
