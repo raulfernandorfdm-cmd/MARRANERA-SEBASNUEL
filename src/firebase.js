@@ -1,19 +1,15 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { useState } from "react";
+import Inventario from "./components/Inventario";
 
-// Configuración de tu proyecto Firebase
-const firebaseConfig = {
-  apiKey: "AIzaSyB100c64z1C9EcBHi9NUK-C-qOu3n0ftWY",
-  authDomain: "marranera-sebasnuel.firebaseapp.com",
-  projectId: "marranera-sebasnuel",
-  storageBucket: "marranera-sebasnuel.firebasestorage.app",
-  messagingSenderId: "262344078710",
-  appId: "1:262344078710:web:375259fface100c1a93657",
-  measurementId: "G-4836FTLYCY",
-};
+export default function App() {
+  const [usuarioActual] = useState("Raúl Díaz"); // luego lo haremos con login real
 
-// Inicializar Firebase
-const app = initializeApp(firebaseConfig);
+  return (
+    <div className="contenedor">
+      <h1>Marranera Sebasnuel</h1>
+      <p>Usuario: {usuarioActual}</p>
 
-// Exportar la base de datos (Firestore)
-export const db = getFirestore(app);
+      <Inventario usuarioActual={usuarioActual} />
+    </div>
+  );
+}
