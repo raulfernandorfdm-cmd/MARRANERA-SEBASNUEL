@@ -6,7 +6,7 @@ export default function App() {
   const [telefono, setTelefono] = useState("");
   const [metodoPago, setMetodoPago] = useState("Pendiente");
 
-  // Simulamos usuario logueado (luego lo hacemos real)
+  // Usuario que hace la venta (firma interna)
   const usuarioActual = "Raúl Díaz";
 
   const [productos, setProductos] = useState([
@@ -34,19 +34,20 @@ export default function App() {
   const exportarPDF = () => {
     const doc = new jsPDF();
 
-    // Logo
-    const logo = "/origen/logo.png";
-    doc.addImage(logo, "PNG", 150, 10, 40, 40);
+    // ✅ LOGO PRO (desde public/logo.png)
+    const logo = "/logo.png";
+    doc.addImage(logo, "PNG", 160, 10, 35, 35);
 
     doc.setFontSize(16);
-    doc.text("Sistema Marranera Sebasnuel", 10, 20);
-
+    doc.text("Marranera Sebasnuel", 10, 20);
     doc.setFontSize(12);
-    doc.text(`Cliente: ${cliente}`, 10, 35);
-    doc.text(`Vendedor: ${usuarioActual}`, 10, 42);
-    doc.text(`Método de pago: ${metodoPago}`, 10, 49);
+    doc.text("Sistema de Gestión de Pedidos", 10, 28);
 
-    let y = 65;
+    doc.text(`Cliente: ${cliente}`, 10, 45);
+    doc.text(`Teléfono: ${telefono}`, 10, 52);
+    doc.text(`Método de pago: ${metodoPago}`, 10, 59);
+
+    let y = 75;
     productos.forEach((p, i) => {
       doc.text(
         `${i + 1}. ${p.nombre} - ${p.kilos} kg x ${formatoCOP(p.precio)}`,
@@ -56,16 +57,14 @@ export default function App() {
       y += 8;
     });
 
+    doc.setFontSize(14);
     doc.text(`TOTAL: ${formatoCOP(total)}`, 10, y + 10);
 
-    doc.setFontSize(10);
-    doc.text(
-      "Software creado por Raúl Díaz © 2026",
-      10,
-      280
-    );
+    // Firma interna (no visible para el cliente si luego la ocultamos)
+    doc.setFontSize(9);
+    doc.text(`Venta registrada por: ${usuarioActual}`, 10, 285);
 
-    doc.save("factura-marranera.pdf");
+    doc.save("factura-marranera-sebasnuel.pdf");
   };
 
   return (
@@ -86,8 +85,8 @@ export default function App() {
       />
 
       <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-        <option>Pendiente</option>
-        <option>Pagado</option>
+        <option value="Pendiente">Pendiente</option>
+        <option value="Pagado">Pagado</option>
       </select>
 
       {metodoPago === "Pendiente" && (
