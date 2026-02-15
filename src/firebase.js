@@ -1,15 +1,14 @@
-import { useState } from "react";
-import Inventario from "./components/Inventario";
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
-export default function App() {
-  const [usuarioActual] = useState("Raúl Díaz"); // luego lo haremos con login real
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "TU_AUTH_DOMAIN",
+  projectId: "TU_PROJECT_ID",
+  storageBucket: "TU_STORAGE_BUCKET",
+  messagingSenderId: "TU_SENDER_ID",
+  appId: "TU_APP_ID",
+};
 
-  return (
-    <div className="contenedor">
-      <h1>Marranera Sebasnuel</h1>
-      <p>Usuario: {usuarioActual}</p>
-
-      <Inventario usuarioActual={usuarioActual} />
-    </div>
-  );
-}
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
