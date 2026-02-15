@@ -1,25 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
+
+const PRECIOS_BASE = {
+  Pernil: 26000,
+  Costilla: 26000,
+  Lomo: 28000,
+  Tocino: 18000,
+};
 
 export default function App() {
   const [cliente, setCliente] = useState("");
   const [telefono, setTelefono] = useState("");
   const [metodoPago, setMetodoPago] = useState("Pendiente");
+  const [numeroFactura, setNumeroFactura] = useState(1);
 
-  // Usuario que hace la venta (firma interna)
   const usuarioActual = "Raúl Díaz";
 
   const [productos, setProductos] = useState([
-    { nombre: "", kilos: 1, precio: 0 },
+    { nombre: "Pernil", kilos: 1, precio: PRECIOS_BASE.Pernil },
   ]);
 
+  const [historial, setHistorial] = useState([]);
+
+  useEffect(() => {
+    const n = localStorage.getItem("factura");
+    const h = JSON.parse(localStorage.getItem("historial") || "[]");
+    if (n) setNumeroFactura(Number(n));
+    setHistorial(h);
+  }, []);
+
+  const guardarHistorial = (factura) => {
+    const nuevo = [factura, ...historial];
+    setHistorial(nuevo);
+    localStorage.setItem("historial", JSON.stringify(nuevo));
+  };
+
   const agregarProducto = () => {
-    setProductos([...productos, { nombre: "", kilos: 1, precio: 0 }]);
+    setProductos([...productos, { nombre: "Pernil", kilos: 1, precio: PRECIOS_BASE.Pernil }]);
   };
 
   const actualizarProducto = (i, campo, valor) => {
     const copia = [...productos];
     copia[i][campo] = valor;
+    if (campo === "nombre") copia[i].precio = PRECIOS_BASE[valor] || 0;
     setProductos(copia);
   };
 
@@ -28,92 +51,66 @@ export default function App() {
     0
   );
 
-  const formatoCOP = (valor) =>
-    valor.toLocaleString("es-CO", { style: "currency", currency: "COP" });
+  const formatoCOP = (v) =>
+    v.toLocaleString("es-CO", { style: "currency", currency: "COP" });
 
   const exportarPDF = () => {
     const doc = new jsPDF();
-
-    // ✅ LOGO PRO (desde public/logo.png)
     const logo = "/logo.png";
-    doc.addImage(logo, "PNG", 160, 10, 35, 35);
+    doc.addImage(logo, "PNG", 150, 10, 40, 40);
 
     doc.setFontSize(16);
     doc.text("Marranera Sebasnuel", 10, 20);
     doc.setFontSize(12);
-    doc.text("Sistema de Gestión de Pedidos", 10, 28);
+    doc.text(`Factura #${numeroFactura}`, 10, 30);
+    doc.text(`Cliente: ${cliente}`, 10, 40);
+    doc.text(`Teléfono: ${telefono}`, 10, 48);
+    doc.text(`Vendedor: ${usuarioActual}`, 10, 56);
+    doc.text(`Método de pago: ${metodoPago}`, 10, 64);
 
-    doc.text(`Cliente: ${cliente}`, 10, 45);
-    doc.text(`Teléfono: ${telefono}`, 10, 52);
-    doc.text(`Método de pago: ${metodoPago}`, 10, 59);
-
-    let y = 75;
+    let y = 80;
     productos.forEach((p, i) => {
-      doc.text(
-        `${i + 1}. ${p.nombre} - ${p.kilos} kg x ${formatoCOP(p.precio)}`,
-        10,
-        y
-      );
+      doc.text(`${i + 1}. ${p.nombre} - ${p.kilos} kg x ${formatoCOP(p.precio)}`, 10, y);
       y += 8;
     });
 
-    doc.setFontSize(14);
     doc.text(`TOTAL: ${formatoCOP(total)}`, 10, y + 10);
+    doc.save(`factura-${numeroFactura}.pdf`);
 
-    // Firma interna (no visible para el cliente si luego la ocultamos)
-    doc.setFontSize(9);
-    doc.text(`Venta registrada por: ${usuarioActual}`, 10, 285);
+    const factura = { numeroFactura, cliente, telefono, total, fecha: new Date().toLocaleString() };
+    guardarHistorial(factura);
+    localStorage.setItem("factura", numeroFactura + 1);
+    setNumeroFactura(numeroFactura + 1);
+  };
 
-    doc.save("factura-marranera-sebasnuel.pdf");
+  const enviarWhatsApp = () => {
+    const mensaje = `Hola ${cliente}, tu factura #${numeroFactura} es por ${formatoCOP(total)}. Gracias por tu compra 🐷🔥`;
+    window.open(`https://wa.me/57${telefono}?text=${encodeURIComponent(mensaje)}`);
   };
 
   return (
     <div className="contenedor">
       <h1>Marranera Sebasnuel</h1>
-      <h2>Sistema de Gestión de Pedidos</h2>
+      <h2>Sistema de Gestión PRO</h2>
 
-      <input
-        placeholder="Nombre del cliente"
-        value={cliente}
-        onChange={(e) => setCliente(e.target.value)}
-      />
-
-      <input
-        placeholder="Teléfono WhatsApp"
-        value={telefono}
-        onChange={(e) => setTelefono(e.target.value)}
-      />
+      <input placeholder="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+      <input placeholder="WhatsApp" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
 
       <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-        <option value="Pendiente">Pendiente</option>
-        <option value="Pagado">Pagado</option>
+        <option>Pendiente</option>
+        <option>Pagado</option>
       </select>
 
-      {metodoPago === "Pendiente" && (
-        <p className="alerta">⚠ Cliente con pago pendiente</p>
-      )}
-
-      <h3>Productos</h3>
-
       {productos.map((p, i) => (
-        <div key={i} className="fila">
-          <input
-            placeholder="Producto"
-            value={p.nombre}
-            onChange={(e) => actualizarProducto(i, "nombre", e.target.value)}
-          />
-          <input
-            type="number"
-            step="0.1"
-            min="0.1"
-            value={p.kilos}
-            onChange={(e) => actualizarProducto(i, "kilos", e.target.value)}
-          />
-          <input
-            type="number"
-            value={p.precio}
-            onChange={(e) => actualizarProducto(i, "precio", e.target.value)}
-          />
+        <div key={i}>
+          <select value={p.nombre} onChange={(e) => actualizarProducto(i, "nombre", e.target.value)}>
+            {Object.keys(PRECIOS_BASE).map((prod) => (
+              <option key={prod}>{prod}</option>
+            ))}
+          </select>
+
+          <input type="number" value={p.kilos} onChange={(e) => actualizarProducto(i, "kilos", e.target.value)} />
+          <input type="number" value={p.precio} onChange={(e) => actualizarProducto(i, "precio", e.target.value)} />
         </div>
       ))}
 
@@ -121,7 +118,15 @@ export default function App() {
 
       <h3>Total: {formatoCOP(total)}</h3>
 
-      <button onClick={exportarPDF}>📄 Exportar PDF</button>
+      <button onClick={exportarPDF}>📄 Generar factura</button>
+      <button onClick={enviarWhatsApp}>📲 Enviar por WhatsApp</button>
+
+      <h3>📚 Historial de ventas</h3>
+      {historial.map((f, i) => (
+        <p key={i}>
+          #{f.numeroFactura} - {f.cliente} - {formatoCOP(f.total)} - {f.fecha}
+        </p>
+      ))}
     </div>
   );
 }
