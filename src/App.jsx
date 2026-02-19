@@ -62,7 +62,9 @@ export default function App() {
 
   const exportarPDF = () => {
     const doc = new jsPDF();
+
     const logo = "/logo.png";
+    doc.addImage(logo, "PNG", 150, 10, 40, 40);
 
     doc.setFontSize(16);
     doc.text("Sistema Marranera Sebasnuel", 10, 20);
@@ -105,7 +107,7 @@ export default function App() {
         <option>Pagado</option>
       </select>
 
-      {metodoPago === "Pendiente" && cliente && (
+      {metodoPago === "Pendiente" && (
         <p style={{ color: "red" }}>⚠ Cliente con pago pendiente</p>
       )}
 
