@@ -3,11 +3,11 @@ import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: "TU_API_KEY",
-  authDomain: "TU_AUTH_DOMAIN",
-  projectId: "TU_PROJECT_ID",
-  storageBucket: "TU_STORAGE_BUCKET",
-  messagingSenderId: "TU_SENDER_ID",
-  appId: "TU_APP_ID",
+  authDomain: "marranera-sebasnuel.firebaseapp.com",
+  projectId: "marranera-sebasnuel",
+  storageBucket: "marranera-sebasnuel.appspot.com",
+  messagingSenderId: "262344078710",
+  appId: "1:262344078710:web:375259fface100c1a93657",
 };
 
 const app = initializeApp(firebaseConfig);
