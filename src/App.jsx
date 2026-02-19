@@ -6,7 +6,7 @@ import { collection, addDoc, getDocs } from "firebase/firestore";
 export default function App() {
   const [cliente, setCliente] = useState("");
   const [metodoPago, setMetodoPago] = useState("Pendiente");
-  const [usuarioActual] = useState("Raúl Díaz");
+  const [usuarioActual, setUsuarioActual] = useState("Raúl Díaz");
 
   const [productos, setProductos] = useState([
     { nombre: "Costilla", kilos: 1, precio: 18000 },
@@ -43,11 +43,6 @@ export default function App() {
     valor.toLocaleString("es-CO", { style: "currency", currency: "COP" });
 
   const guardarVenta = async () => {
-    if (!cliente) {
-      alert("Escribe el nombre del cliente");
-      return;
-    }
-
     const venta = {
       cliente,
       usuario: usuarioActual,
@@ -69,28 +64,29 @@ export default function App() {
     const doc = new jsPDF();
     const logo = "/logo.png";
 
-    doc.addImage(logo, "PNG", 150, 10, 40, 40);
     doc.setFontSize(16);
     doc.text("Sistema Marranera Sebasnuel", 10, 20);
 
     doc.setFontSize(12);
-    doc.text(Cliente: ${cliente}, 10, 35);
-    doc.text(Vendedor: ${usuarioActual}, 10, 42);
-    doc.text(Método de pago: ${metodoPago}, 10, 49);
+    doc.text(`Cliente: ${cliente}`, 10, 35);
+    doc.text(`Vendedor: ${usuarioActual}`, 10, 42);
+    doc.text(`Método de pago: ${metodoPago}`, 10, 49);
 
     let y = 65;
     productos.forEach((p, i) => {
       doc.text(
-        ${i + 1}. ${p.nombre} - ${p.kilos} kg x ${formatoCOP(p.precio)},
+        `${i + 1}. ${p.nombre} - ${p.kilos} kg x ${formatoCOP(p.precio)}`,
         10,
         y
       );
       y += 8;
     });
 
-    doc.text(TOTAL: ${formatoCOP(total)}, 10, y + 10);
+    doc.text(`TOTAL: ${formatoCOP(total)}`, 10, y + 10);
+
     doc.setFontSize(10);
     doc.text("Software creado por Raúl Díaz © 2026", 10, 280);
+
     doc.save("factura-marranera.pdf");
   };
 
@@ -109,7 +105,7 @@ export default function App() {
         <option>Pagado</option>
       </select>
 
-      {cliente && metodoPago === "Pendiente" && (
+      {metodoPago === "Pendiente" && cliente && (
         <p style={{ color: "red" }}>⚠ Cliente con pago pendiente</p>
       )}
 
@@ -125,6 +121,7 @@ export default function App() {
           <input
             type="number"
             step="0.1"
+            min="0.1"
             value={p.kilos}
             onChange={(e) => actualizarProducto(i, "kilos", e.target.value)}
           />
