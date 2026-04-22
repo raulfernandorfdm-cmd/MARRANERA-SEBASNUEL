@@ -60,6 +60,7 @@ export default function App() {
   const [ventaEditandoId, setVentaEditandoId] = useState(null);
   const [inventarioForm, setInventarioForm] = useState({ nombre: "", stock: 0 });
   const [gastoForm, setGastoForm] = useState({ concepto: "", monto: 0, categoria: "Operativo" });
+  const [pendingQueueCount, setPendingQueueCount] = useState(() => readQueue().length);
   const [form, setForm] = useState({
     cliente: "",
     telefono: "",
@@ -70,6 +71,7 @@ export default function App() {
   const queueOp = (op) => {
     const queue = [...readQueue(), op];
     localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(queue));
+    setPendingQueueCount(queue.length);
   };
 
   const pollingCloud = async () => {
@@ -114,6 +116,7 @@ export default function App() {
     }
 
     localStorage.removeItem(PENDING_QUEUE_KEY);
+    setPendingQueueCount(0);
     await pollingCloud();
   };
 
@@ -121,6 +124,12 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
+
+  useEffect(() => {
+    const onStorage = () => setPendingQueueCount(readQueue().length);
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
 
   useEffect(() => {
     if (!firebaseReady) {
@@ -272,6 +281,19 @@ export default function App() {
     };
   }, [ventasActivas]);
 
+  const clientesFrecuentes = useMemo(() => {
+    const map = new Map();
+    ventasActivas.forEach((v) => {
+      const cliente = String(v.cliente || "").trim();
+      if (!cliente) return;
+      const prev = map.get(cliente) || { cliente, telefono: v.telefono || "", visitas: 0 };
+      prev.visitas += 1;
+      if (!prev.telefono && v.telefono) prev.telefono = v.telefono;
+      map.set(cliente, prev);
+    });
+    return Array.from(map.values()).sort((a, b) => b.visitas - a.visitas).slice(0, 5);
+  }, [ventasActivas]);
+
   const gastosActivos = useMemo(() => gastos.filter((g) => !g.eliminado), [gastos]);
 
   const resumenFinanciero = useMemo(() => {
@@ -332,6 +354,31 @@ export default function App() {
   }, [ventasActivas, gastosActivos]);
   const chartMaxVentas = useMemo(() => Math.max(...chartSemanal.map((x) => x.ventas), 1), [chartSemanal]);
   const chartMaxUtilidad = useMemo(() => Math.max(...chartSemanal.map((x) => Math.abs(x.utilidad)), 1), [chartSemanal]);
+
+  const alertasInteligentes = useMemo(() => {
+    const alertas = [];
+    if (!navigator.onLine || pendingQueueCount > 0) {
+      alertas.push({
+        tipo: "sync",
+        texto: pendingQueueCount > 0
+          ? `Hay ${pendingQueueCount} cambios pendientes de sincronizar.`
+          : "Modo offline activo. Los cambios se guardan localmente.",
+      });
+    }
+    if (carteraResumen.vencidos.length > 0) {
+      alertas.push({
+        tipo: "cartera",
+        texto: `Tienes ${carteraResumen.vencidos.length} cobros vencidos por gestionar.`,
+      });
+    }
+    if (inventarioResumen.agotados > 0 || inventarioResumen.bajos > 0) {
+      alertas.push({
+        tipo: "inventario",
+        texto: `Inventario en riesgo: ${inventarioResumen.agotados} agotados y ${inventarioResumen.bajos} con stock bajo.`,
+      });
+    }
+    return alertas;
+  }, [pendingQueueCount, carteraResumen.vencidos.length, inventarioResumen.agotados, inventarioResumen.bajos]);
 
   const estadisticasVendedor = useMemo(() => {
     const map = new Map();
@@ -845,6 +892,24 @@ export default function App() {
         <article className="card kpi"><span>Clientes atendidos</span><strong>{reporteDiario.clientes}</strong></article>
       </section>
 
+      <section className="grid2 executive-board">
+        <article className="card">
+          <h3>Dashboard ejecutivo</h3>
+          <div className="mini-kpis">
+            <div className="mini-kpi"><span>Facturación semanal</span><strong>{formatoCOP(resumenFinanciero.semanalVentas)}</strong></div>
+            <div className="mini-kpi"><span>Utilidad semanal</span><strong>{formatoCOP(resumenFinanciero.semanalUtilidad)}</strong></div>
+            <div className="mini-kpi"><span>Pendiente de cartera</span><strong>{formatoCOP(carteraPendiente)}</strong></div>
+            <div className="mini-kpi"><span>Operaciones en cola</span><strong>{pendingQueueCount}</strong></div>
+          </div>
+        </article>
+        <article className="card alerts-card">
+          <h3>Alertas inteligentes</h3>
+          {alertasInteligentes.length ? alertasInteligentes.map((a, idx) => (
+            <p className="alert-chip" key={`${a.tipo}-${idx}`}>{a.texto}</p>
+          )) : <p className="muted">Todo en orden. Sin alertas críticas ahora.</p>}
+        </article>
+      </section>
+
       {tab === "ventas" && (
         <section className="grid2">
           <article className="card form-card">
@@ -867,6 +932,20 @@ export default function App() {
             <div className="toolbar">
               <button onClick={() => setForm((p) => ({ ...p, productos: [...p.productos, { nombre: PRODUCTOS_BASE[0], kilos: 1, precio: 0 }] }))}>+ Agregar producto</button>
               {ventaEditandoId && <button className="ghost" onClick={resetForm}>Cancelar edición</button>}
+            </div>
+            <div className="quick-clients">
+              <small className="muted">Clientes frecuentes:</small>
+              <div className="quick-client-list">
+                {clientesFrecuentes.map((c) => (
+                  <button
+                    key={c.cliente}
+                    className="chip-button"
+                    onClick={() => setForm((p) => ({ ...p, cliente: c.cliente, telefono: c.telefono || p.telefono }))}
+                  >
+                    {c.cliente}
+                  </button>
+                ))}
+              </div>
             </div>
             <button className="primary big" onClick={guardarVenta}>{ventaEditandoId ? "Actualizar pedido" : "Guardar pedido"}</button>
             <div className="toolbar">
@@ -1087,6 +1166,13 @@ export default function App() {
           </article>
         </section>
       )}
+
+      <nav className="bottom-nav">
+        <button className={tab === "ventas" ? "active" : ""} onClick={() => setTab("ventas")}>🏦 Ventas</button>
+        <button className={tab === "inventario" ? "active" : ""} onClick={() => setTab("inventario")}>📦 Inventario</button>
+        <button className={tab === "cartera" ? "active" : ""} onClick={() => setTab("cartera")}>💳 Cartera</button>
+        <button className={tab === "finanzas" ? "active" : ""} onClick={() => setTab("finanzas")}>📈 Finanzas</button>
+      </nav>
     </div>
   );
 }

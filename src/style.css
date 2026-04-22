@@ -46,7 +46,9 @@ body {
   box-shadow: var(--shadow);
   padding: 16px;
   animation: fadeIn 0.4s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+.card:hover { transform: translateY(-2px); box-shadow: 0 20px 44px rgba(20, 42, 90, 0.18); }
 
 .hero {
   display: flex;
@@ -168,6 +170,56 @@ button:hover { transform: translateY(-1px); }
 
 .mini-kpi span { display: block; font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
 .mini-kpi strong { font-size: 1rem; }
+.executive-board { margin-bottom: 12px; }
+.alerts-card { border-left: 4px solid var(--primary-2); }
+.alert-chip {
+  margin: 0 0 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card), #f5f8ff 20%);
+  font-size: 0.92rem;
+}
+
+.quick-clients { margin: 4px 0 8px; }
+.quick-client-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-button {
+  width: auto;
+  margin: 0;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary), #fff 82%);
+  color: var(--primary);
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 8px;
+  background: color-mix(in srgb, var(--card), #0f1d38 16%);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+  z-index: 30;
+}
+
+.bottom-nav button {
+  margin: 0;
+  min-height: 46px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+}
+
+.bottom-nav .active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  color: #fff;
+  border: none;
+}
 .report-block {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -244,4 +296,7 @@ button:hover { transform: translateY(-1px); }
   .hero { flex-direction: column; align-items: flex-start; }
   .row3 { grid-template-columns: 1fr; }
   .row2 { grid-template-columns: 1fr; }
+  .tabs { display: none; }
+  .app-shell { padding-bottom: 84px; }
+  .bottom-nav { display: grid; }
 }
