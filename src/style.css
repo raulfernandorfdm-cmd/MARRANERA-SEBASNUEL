@@ -30,13 +30,19 @@ body {
   margin: 0;
   font-family: "Inter", "SF Pro Text", system-ui, -apple-system, sans-serif;
   color: var(--text);
+  min-height: 100dvh;
   background:
     radial-gradient(circle at top right, rgba(57, 119, 255, 0.15), transparent 30%),
     radial-gradient(circle at top left, rgba(31, 157, 85, 0.1), transparent 25%),
     var(--bg);
 }
 
-.app-shell { max-width: 1220px; margin: 0 auto; padding: 18px; }
+.app-shell {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: calc(16px + env(safe-area-inset-top)) 18px calc(18px + env(safe-area-inset-bottom));
+  min-height: 100dvh;
+}
 .center { min-height: 100vh; display: grid; place-items: center; }
 
 .card {
@@ -59,6 +65,16 @@ body {
 }
 .hero h1 { margin: 4px 0; }
 .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.apk-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--primary), #fff 85%);
+  color: var(--primary);
+}
 
 .eyebrow {
   text-transform: uppercase;
@@ -83,6 +99,10 @@ body {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 12px;
+  position: sticky;
+  top: calc(6px + env(safe-area-inset-top));
+  z-index: 10;
+  backdrop-filter: blur(8px);
 }
 
 input, select, button {
@@ -201,7 +221,7 @@ button:hover { transform: translateY(-1px); }
   display: none;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
-  padding: 8px;
+  padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
   background: color-mix(in srgb, var(--card), #0f1d38 16%);
   border-top: 1px solid var(--border);
   backdrop-filter: blur(8px);
@@ -297,6 +317,12 @@ button:hover { transform: translateY(-1px); }
   .row3 { grid-template-columns: 1fr; }
   .row2 { grid-template-columns: 1fr; }
   .tabs { display: none; }
-  .app-shell { padding-bottom: 84px; }
+  .app-shell {
+    max-width: 100%;
+    padding: calc(12px + env(safe-area-inset-top)) 12px 104px;
+  }
+  .card { border-radius: 16px; padding: 14px; }
+  .kpi strong { font-size: 1.15rem; }
   .bottom-nav { display: grid; }
+  .history { max-height: none; }
 }

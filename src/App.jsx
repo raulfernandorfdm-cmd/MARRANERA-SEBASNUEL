@@ -870,6 +870,7 @@ export default function App() {
           <h1>Marranera Sebasnuel</h1>
           <p className="muted">{fechaHoy} · {sesion.nombre} ({sesion.role})</p>
           <p className="muted">{estadoSync}</p>
+          <span className="apk-pill">WebApp lista para empaquetar en APK (Capacitor)</span>
         </div>
         <div className="hero-actions">
           <button className="ghost" onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}>{theme === "dark" ? "☀️ Modo claro" : "🌙 Modo oscuro"}</button>
